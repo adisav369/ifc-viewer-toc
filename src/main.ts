@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import * as OBC from "@thatopen/components";
+import * as OBF from "@thatopen/components-front";
 
 // 1. Container for the 3D view
 const container = document.getElementById("container")!;
@@ -9,19 +10,42 @@ const components = new OBC.Components();
 
 // 3. World setup — using OrthoPerspectiveCamera for smooth orbit/pan/zoom
 const worlds = components.get(OBC.Worlds);
-const world = worlds.create<OBC.SimpleScene, OBC.OrthoPerspectiveCamera, OBC.SimpleRenderer>();
+const world = worlds.create<OBC.SimpleScene, OBC.OrthoPerspectiveCamera, OBF.PostproductionRenderer>();
 
 world.scene = new OBC.SimpleScene(components);
 world.scene.setup();
 world.scene.three.background = new THREE.Color(0x202932);
 
-world.renderer = new OBC.SimpleRenderer(components, container);
+world.renderer = new OBF.PostproductionRenderer(components, container);
 world.camera = new OBC.OrthoPerspectiveCamera(components);
 await world.camera.controls.setLookAt(78, 20, -2.2, 26, -4, 25);
 
 components.init();
 
 console.log("World ready:", world);
+
+function setupHighlighter() {
+  components.get(OBC.Raycasters).get(world);
+
+  const highlighter = components.get(OBF.Highlighter);
+  highlighter.setup({
+    world,
+    selectMaterialDefinition: {
+      color: new THREE.Color("#bcf124"),
+      opacity: 1,
+      transparent: false,
+      renderedFaces: 0,
+    },
+  });
+
+  highlighter.events.select.onHighlight.add(async (modelIdMap) => {
+    console.log("Element selected:", modelIdMap);
+  });
+
+  highlighter.events.select.onClear.add(() => {
+    console.log("Selection cleared");
+  });
+}
 
 async function setupIfcLoader() {
   const ifcLoader = components.get(OBC.IfcLoader);
@@ -70,7 +94,6 @@ async function init() {
   fileInput.onchange = async () => {
     const file = fileInput.files?.[0];
     if (!file) return;
-
     status.textContent = "Converting IFC to Fragments... please wait";
 
     const data = await file.arrayBuffer();
@@ -85,6 +108,7 @@ async function init() {
     });
 
     uploadScreen.style.display = "none";
+    setupHighlighter();
   };
 }
 
