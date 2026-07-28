@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>IFC Viewer</title>
+  <style>
+    html, body { margin: 0; padding: 0; overflow: hidden; font-family: sans-serif; }
+    #container { width: 100vw; height: 100vh; }
+
+    #upload-screen {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      background: #202932;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+    }
+
+    #upload-btn {
+      padding: 14px 28px;
+      font-size: 16px;
+      background: #494cb6;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    #upload-status {
+      color: white;
+      margin-top: 16px;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div id="container"></div>
+
+  <div id="upload-screen">
+    <button id="upload-btn">Upload IFC Model</button>
+    <input type="file" id="file-input" accept=".ifc" style="display: none;" />
+    <div id="upload-status"></div>
+  </div>
+
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
