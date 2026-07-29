@@ -18,6 +18,7 @@
     "@thatopen/components-front": "^3.4.4",
     "@thatopen/fragments": "^3.4.7",
     "@thatopen/ui": "^3.4.10",
+    "pdfjs-dist": "^6.2.108",
     "stats.js": "^0.17.0",
     "three": "^0.185.1"
   }

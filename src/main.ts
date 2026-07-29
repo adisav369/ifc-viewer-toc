@@ -9,6 +9,10 @@ import { findAncestors } from "./graph/queries";
 import { renderGraphExplorer } from "./ui/graphExplorer";
 import { buildEntityMap } from "./semantic/entityMapper";
 import type { Entity } from "./semantic/entity";
+import { extractPdf } from "./connectors/documents/pdfConnector";
+import { mapDocumentToEntity } from "./connectors/documents/documentMapper";
+import { RelationshipStore } from "./semantic/relationships";
+import { allWalls } from "./graph/queries";
 
 const container = document.getElementById("container")!;
 const components = new OBC.Components();
@@ -18,6 +22,7 @@ components.init();
 
 let graph: Graph | null = null;
 let entities: Map<number, Entity> | null = null;
+const relationships = new RelationshipStore();
 
 async function init() {
   await world.camera.controls.setLookAt(78, 20, -2.2, 26, -4, 25);
@@ -56,15 +61,41 @@ async function init() {
       console.log("Graph built. Total nodes:", graph.nodes.size);
       runGraphDemo(graph);
       entities = buildEntityMap(graph.nodes);
+      const pdfBtn = document.getElementById("pdf-upload-btn") as HTMLButtonElement;
+      const pdfInput = document.getElementById("pdf-input") as HTMLInputElement;
+      pdfBtn.style.display = "block";
+
+      pdfBtn.onclick = () => pdfInput.click();
+
+      pdfInput.onchange = async () => {
+       const file = pdfInput.files?.[0];
+       if (!file || !graph || !entities) return;
+
+       console.log("Extracting PDF...");
+       const doc = await extractPdf(file);
+       console.log("Extracted document:", { title: doc.title, pageCount: doc.pageCount, textPreview: doc.text.slice(0, 200) });
+
+       const docEntity = mapDocumentToEntity(doc);
+       entities.set(docEntity.id, docEntity);
+       console.log("Canonical document entity:", docEntity);
+
+       const walls = allWalls(graph);
+       const targetWall = walls[0];
+       if (targetWall) {
+        relationships.add(docEntity.id, "DESCRIBES", targetWall.id);
+        console.log(`Hardcoded relationship: "${docEntity.name}" DESCRIBES "${targetWall.name}"`);
+       }
+     };
       console.log("Canonical entities built:", entities.size);
       console.log("Sample entity:", [...entities.values()][10]);
     }
 
     setupHighlighter(components, world, (modelIdMap: any) => {
       if (!graph || !entities) return;
+      //console.log("DEBUG — relationships at call site:", relationships);
       for (const idSet of Object.values(modelIdMap) as Set<number>[]) {
        for (const id of idSet) {
-        renderGraphExplorer(graph, id, entities);
+        renderGraphExplorer(graph, id, entities, relationships);
        }
       }
     });

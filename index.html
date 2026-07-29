@@ -58,8 +58,13 @@
     #graph-explorer .row { margin: 3px 0; }
     #graph-explorer .label { color: #888; }
   </style>
+
 </head>
 <body>
+  <button id="pdf-upload-btn" style="position: fixed; top: 16px; left: 16px; z-index: 6; display: none; padding: 8px 14px; background: #494cb6; color: white; border: none; border-radius: 6px; cursor: pointer;">
+  Upload Spec PDF
+</button>
+<input type="file" id="pdf-input" accept=".pdf" style="display: none;" />
   <div id="container"></div>
 
   <div id="graph-explorer">
