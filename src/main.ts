@@ -7,6 +7,8 @@ import type { Graph } from "./graph/graph";
 import { runGraphDemo } from "./graph/demo";
 import { findAncestors } from "./graph/queries";
 import { renderGraphExplorer } from "./ui/graphExplorer";
+import { buildEntityMap } from "./semantic/entityMapper";
+import type { Entity } from "./semantic/entity";
 
 const container = document.getElementById("container")!;
 const components = new OBC.Components();
@@ -15,6 +17,7 @@ const world = createWorld(components, container);
 components.init();
 
 let graph: Graph | null = null;
+let entities: Map<number, Entity> | null = null;
 
 async function init() {
   await world.camera.controls.setLookAt(78, 20, -2.2, 26, -4, 25);
@@ -52,15 +55,18 @@ async function init() {
       graph = await buildSpatialGraph(model);
       console.log("Graph built. Total nodes:", graph.nodes.size);
       runGraphDemo(graph);
+      entities = buildEntityMap(graph.nodes);
+      console.log("Canonical entities built:", entities.size);
+      console.log("Sample entity:", [...entities.values()][10]);
     }
 
     setupHighlighter(components, world, (modelIdMap: any) => {
-      if (!graph) return;
+      if (!graph || !entities) return;
       for (const idSet of Object.values(modelIdMap) as Set<number>[]) {
        for (const id of idSet) {
-        renderGraphExplorer(graph, id);
+        renderGraphExplorer(graph, id, entities);
        }
-      }  
+      }
     });
   };
 }

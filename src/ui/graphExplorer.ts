@@ -1,12 +1,14 @@
 import { Graph } from "../graph/graph";
 import { ancestorOfType, findChildren } from "../graph/queries";
+import type { Entity } from "../semantic/entity";
 
-export function renderGraphExplorer(graph: Graph, elementId: number) {
+export function renderGraphExplorer(graph: Graph, elementId: number, entities: Map<number, Entity>) {
   const panel = document.getElementById("graph-explorer")!;
   const elementDiv = document.getElementById("ge-element")!;
   const relDiv = document.getElementById("ge-relationships")!;
 
   const node = graph.getNode(elementId);
+  const entity = entities.get(elementId);
   if (!node) return;
 
   panel.style.display = "block";
@@ -14,6 +16,8 @@ export function renderGraphExplorer(graph: Graph, elementId: number) {
   elementDiv.innerHTML = `
     <div class="row"><span class="label">Type:</span> ${node.type}</div>
     <div class="row"><span class="label">Name:</span> ${node.name}</div>
+    <div class="row"><span class="label">Canonical Type:</span> ${entity?.entityType ?? "—"}</div>
+    <div class="row"><span class="label">Domain:</span> ${entity?.domain ?? "—"}</div>
   `;
 
   const project = ancestorOfType(graph, elementId, "IFCPROJECT");
