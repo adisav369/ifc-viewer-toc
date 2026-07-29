@@ -1,112 +1,21 @@
-import * as THREE from "three";
 import * as OBC from "@thatopen/components";
-import * as OBF from "@thatopen/components-front";
+import { createWorld } from "./scene/world";
+import { setupIfcLoader } from "./ifc/loader";
+import { setupHighlighter } from "./selection/highlighter";
+import { buildSpatialGraph, describeElement, traceAncestors, type GraphData } from "./graph/spatialGraph";
 
-// 1. Container for the 3D view
 const container = document.getElementById("container")!;
-
-// 2. Central app hub
 const components = new OBC.Components();
 
-// 3. World setup — using OrthoPerspectiveCamera for smooth orbit/pan/zoom
-const worlds = components.get(OBC.Worlds);
-const world = worlds.create<OBC.SimpleScene, OBC.OrthoPerspectiveCamera, OBF.PostproductionRenderer>();
-
-world.scene = new OBC.SimpleScene(components);
-world.scene.setup();
-world.scene.three.background = new THREE.Color(0x202932);
-
-world.renderer = new OBF.PostproductionRenderer(components, container);
-world.camera = new OBC.OrthoPerspectiveCamera(components);
-await world.camera.controls.setLookAt(78, 20, -2.2, 26, -4, 25);
-
+const world = createWorld(components, container);
 components.init();
 
-console.log("World ready:", world);
-
-function setupHighlighter() {
-  components.get(OBC.Raycasters).get(world);
-
-  const highlighter = components.get(OBF.Highlighter);
-  highlighter.setup({
-    world,
-    selectMaterialDefinition: {
-      color: new THREE.Color("#bcf124"),
-      opacity: 1,
-      transparent: false,
-      renderedFaces: 0,
-    },
-  });
-
-  highlighter.events.select.onHighlight.add(async (modelIdMap) => {
-    console.log("Element selected:", modelIdMap);
-  });
-
-  highlighter.events.select.onClear.add(() => {
-    console.log("Selection cleared");
-  });
-}
-
-async function setupIfcLoader() {
-  const ifcLoader = components.get(OBC.IfcLoader);
-
-  await ifcLoader.setup({
-    autoSetWasm: false,
-    wasm: {
-      path: "https://unpkg.com/web-ifc@0.0.77/",
-      absolute: true,
-    },
-  });
-
-  const workerUrl = await OBC.FragmentsManager.getWorker();
-  const fragments = components.get(OBC.FragmentsManager);
-  fragments.init(workerUrl);
-
-  world.camera.controls.addEventListener("update", () => fragments.core.update());
-
-  fragments.list.onItemSet.add(({ value: model }) => {
-    model.useCamera(world.camera.three);
-    world.scene.three.add(model.object);
-    fragments.core.update(true);
-  });
-
-  fragments.core.models.materials.list.onItemSet.add(({ value: material }) => {
-    if (!("isLodMaterial" in material && material.isLodMaterial)) {
-      material.polygonOffset = true;
-      material.polygonOffsetUnits = 1;
-      material.polygonOffsetFactor = Math.random();
-    }
-  });
-
-  return { ifcLoader, fragments };
-}
-
-interface ElementInfo {
-  id: number;
-  guid: string;
-  type: string;
-  name: string;
-}
-
-async function extractMetadata(model: any) {
-  const ids = await model.getItemsIds();
-  console.log("Total items:", ids.length);
-
-  const rawData = await model.getItemsData(ids);
-
-  const elements: ElementInfo[] = rawData.map((item: any) => ({
-    id: item._localId?.value,
-    guid: item._guid?.value,
-    type: item._category?.value,
-    name: item.Name?.value ?? "(unnamed)",
-  }));
-
-  console.log("Clean extracted elements:", elements);
-  return elements;
-}
+let graph: GraphData | null = null;
 
 async function init() {
-  const { ifcLoader, fragments } = await setupIfcLoader();
+  await world.camera.controls.setLookAt(78, 20, -2.2, 26, -4, 25);
+
+  const { ifcLoader, fragments } = await setupIfcLoader(components, world);
 
   const uploadScreen = document.getElementById("upload-screen")!;
   const uploadBtn = document.getElementById("upload-btn")!;
@@ -132,12 +41,25 @@ async function init() {
     });
 
     uploadScreen.style.display = "none";
-    setupHighlighter();
 
     const [model] = fragments.list.values();
     if (model) {
-      await extractMetadata(model);
+      status.textContent = "Building relationship graph...";
+      graph = await buildSpatialGraph(model);
+      console.log("Graph built. Total nodes:", graph.nodes.size);
     }
+
+    setupHighlighter(components, world, (modelIdMap: any) => {
+      console.log("Raw selection payload:", modelIdMap);
+      console.log("Nodes:", graph.nodes.size, "| Parent links:", graph.parentOf.size, "| Children links:", graph.childrenOf.size);
+      if (!graph) return;
+      for (const idSet of Object.values(modelIdMap) as Set<number>[]) {
+        for (const id of idSet) {
+          describeElement(graph, id);
+          traceAncestors(graph, id);
+        }
+      }
+    });
   };
 }
 
