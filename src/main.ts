@@ -78,11 +78,35 @@ async function setupIfcLoader() {
     }
   });
 
-  return ifcLoader;
+  return { ifcLoader, fragments };
+}
+
+interface ElementInfo {
+  id: number;
+  guid: string;
+  type: string;
+  name: string;
+}
+
+async function extractMetadata(model: any) {
+  const ids = await model.getItemsIds();
+  console.log("Total items:", ids.length);
+
+  const rawData = await model.getItemsData(ids);
+
+  const elements: ElementInfo[] = rawData.map((item: any) => ({
+    id: item._localId?.value,
+    guid: item._guid?.value,
+    type: item._category?.value,
+    name: item.Name?.value ?? "(unnamed)",
+  }));
+
+  console.log("Clean extracted elements:", elements);
+  return elements;
 }
 
 async function init() {
-  const ifcLoader = await setupIfcLoader();
+  const { ifcLoader, fragments } = await setupIfcLoader();
 
   const uploadScreen = document.getElementById("upload-screen")!;
   const uploadBtn = document.getElementById("upload-btn")!;
@@ -109,6 +133,11 @@ async function init() {
 
     uploadScreen.style.display = "none";
     setupHighlighter();
+
+    const [model] = fragments.list.values();
+    if (model) {
+      await extractMetadata(model);
+    }
   };
 }
 
