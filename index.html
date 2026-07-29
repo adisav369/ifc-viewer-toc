@@ -34,10 +34,40 @@
       margin-top: 16px;
       font-size: 14px;
     }
+    #graph-explorer {
+      position: fixed;
+      top: 0; right: 0;
+      width: 280px; height: 100vh;
+      background: rgba(20, 26, 33, 0.95);
+      color: #e0e0e0;
+      padding: 16px;
+      box-sizing: border-box;
+      font-size: 13px;
+      overflow-y: auto;
+      display: none;
+      z-index: 5;
+    }
+    #graph-explorer h3 {
+      margin: 12px 0 4px;
+      color: #bcf124;
+      font-size: 12px;
+      text-transform: uppercase;
+      border-bottom: 1px solid #444;
+      padding-bottom: 4px;
+    }
+    #graph-explorer .row { margin: 3px 0; }
+    #graph-explorer .label { color: #888; }
   </style>
 </head>
 <body>
   <div id="container"></div>
+
+  <div id="graph-explorer">
+    <h3>Selected Element</h3>
+    <div id="ge-element"></div>
+    <h3>Graph Relationships</h3>
+    <div id="ge-relationships"></div>
+  </div>
 
   <div id="upload-screen">
     <button id="upload-btn">Upload IFC Model</button>
