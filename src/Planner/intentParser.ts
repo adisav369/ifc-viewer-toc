@@ -3,12 +3,20 @@ export type Intent =
   | { type: "FindOnStorey"; storey: string; keyword?: string }
   | { type: "FindRelationshipsFor"; relationType: string; targetKeyword: string }
   | { type: "QueryDocumentContent"; docKeyword: string; topic: string }
+  | { type: "ContextualQuestion"; topic: string }
   | { type: "Search"; term: string };
 
 const ELEMENT_KEYWORDS = ["wall", "door", "window", "beam", "column", "space", "room"];
 
 export function parseIntent(query: string): Intent {
   const q = query.trim().toLowerCase();
+
+  const contextualMatch =
+    q.match(/what (?:is|are) its (.+)/) ||
+    q.match(/what (?:is|are) the (.+?) of (?:this|it)/);
+  if (contextualMatch) {
+    return { type: "ContextualQuestion", topic: contextualMatch[1].trim() };
+  }
 
   const chunkQueryMatch = q.match(/what does (?:the )?(.+?) say about (.+)/);
   if (chunkQueryMatch) {

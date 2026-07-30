@@ -69,6 +69,7 @@
   display: none;
   border-bottom: 1px solid #444;
 }
+
 #search-input {
   width: 100%;
   padding: 8px;
@@ -95,6 +96,28 @@
 }
 .search-result-name { color: #e0e0e0; font-weight: 600; }
 .search-result-meta { color: #888; font-size: 11px; }
+
+#evidence-panel {
+  position: fixed;
+  bottom: 0; right: 0;
+  width: 280px;
+  max-height: 40vh;
+  overflow-y: auto;
+  background: rgba(15, 20, 26, 0.98);
+  color: #e0e0e0;
+  padding: 12px 16px;
+  box-sizing: border-box;
+  font-size: 12px;
+  display: none;
+  z-index: 7;
+  border-top: 2px solid #bcf124;
+}
+#evidence-panel h3 {
+  color: #bcf124;
+  font-size: 12px;
+  text-transform: uppercase;
+  margin: 0 0 8px;
+}
   </style>
 
 </head>
@@ -102,6 +125,10 @@
   <div id="search-panel">
     <input type="text" id="search-input" placeholder="Ask EIF... e.g. show walls, walls on level 3" />
     <div id="search-results"></div>
+  </div>
+  <div id="evidence-panel" style="position: fixed; bottom: 0; right: 0; width: 280px; max-height: 40vh; overflow-y: auto; background: rgba(15, 20, 26, 0.98); color: #e0e0e0; padding: 12px 16px; box-sizing: border-box; font-size: 12px; display: none; z-index: 7; border-top: 2px solid #bcf124;">
+    <h3>Evidence</h3>
+    <div id="evidence-body"></div>
   </div>
   <button id="pdf-upload-btn" style="position: fixed; top: 16px; left: 16px; z-index: 6; display: none; padding: 8px 14px; background: #494cb6; color: white; border: none; border-radius: 6px; cursor: pointer;">
     Upload Spec PDF

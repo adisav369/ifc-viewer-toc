@@ -1,7 +1,13 @@
 import type { Intent } from "./intentParser";
 
 export interface QueryPlan {
-  action: "listByNativeTypeKeyword" | "listOnStoreyByKeyword" | "listRelationshipsFor" | "queryDocumentContent" | "search";
+  action:
+    | "listByNativeTypeKeyword"
+    | "listOnStoreyByKeyword"
+    | "listRelationshipsFor"
+    | "queryDocumentContent"
+    | "contextualQuery"
+    | "search";
   keyword?: string;
   storey?: string;
   relationType?: string;
@@ -19,6 +25,8 @@ export function planQuery(intent: Intent): QueryPlan {
       return { action: "listRelationshipsFor", relationType: intent.relationType, targetKeyword: intent.targetKeyword };
     case "QueryDocumentContent":
       return { action: "queryDocumentContent", targetKeyword: intent.docKeyword, term: intent.topic };
+    case "ContextualQuestion":
+      return { action: "contextualQuery", term: intent.topic };
     case "Search":
       return { action: "search", term: intent.term };
   }

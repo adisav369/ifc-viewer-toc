@@ -19,6 +19,7 @@ import { buildSearchIndex } from "./search/searchIndex";
 import { setupSearchPanel } from "./ui/searchPanel";
 import type { DocumentChunk } from "./documents/documentIndex";
 import { ingestDocumentChunks } from "./documents/documentService";
+import { renderEvidencePanel } from "./ui/evidencePanel";
 
 
 const container = document.getElementById("container")!;
@@ -34,6 +35,9 @@ let currentModelId: string | null = null;
 
 let graph: Graph | null = null;
 let entities: Map<number, Entity> | null = null;
+
+let selectedEntityId: number | null = null;
+
 const relationships = new RelationshipService();
 
 async function init() {
@@ -52,6 +56,7 @@ async function init() {
       //console.log("DEBUG — relationships at call site:", relationships);
       for (const idSet of Object.values(modelIdMap) as Set<number>[]) {
        for (const id of idSet) {
+        selectedEntityId = id;
         renderGraphExplorer(graph, id, entities, relationships, allChunks);
        }
       }
@@ -85,7 +90,8 @@ async function init() {
       currentModelId = file.name;
       searchService.setIndex(buildSearchIndex(entities));
 
-      setupSearchPanel(searchService, graph, entities, relationships, allChunks, (id: number) => {
+      setupSearchPanel(searchService, graph, entities, relationships, allChunks, () => selectedEntityId, (id: number) => {
+       selectedEntityId = id;
        if (id > 0 && currentModelId) {
         const modelIdMap = { [currentModelId]: new Set([id]) };
         highlighter.highlightByID("select", modelIdMap, true, true);
