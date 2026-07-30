@@ -2,6 +2,7 @@ import { Graph } from "../graph/graph";
 import type { Entity } from "../semantic/entity";
 import type { RelationshipService } from "../relationships/relationshipService";
 import { SearchService } from "../search/searchService";
+import type { DocumentChunk } from "../documents/documentIndex";
 import { parseIntent } from "../planner/intentParser";
 import { planQuery } from "../planner/queryPlanner";
 import { executeQuery } from "../planner/queryExecutor";
@@ -12,6 +13,7 @@ export function setupSearchPanel(
   graph: Graph,
   entities: Map<number, Entity>,
   relationships: RelationshipService,
+  allChunks: DocumentChunk[],
   onSelect: (id: number) => void
 ) {
   const panel = document.getElementById("search-panel")!;
@@ -32,7 +34,7 @@ export function setupSearchPanel(
     const plan = planQuery(intent);
     console.log("Intent:", intent, "| Plan:", plan);
 
-    const results = executeQuery(plan, graph, entities, relationships, searchService);
+    const results = executeQuery(plan, graph, entities, relationships, searchService, allChunks);
 
     resultsDiv.innerHTML =
       results
@@ -48,7 +50,7 @@ export function setupSearchPanel(
     resultsDiv.querySelectorAll(".search-result-item").forEach((el) => {
       el.addEventListener("click", () => {
         const id = Number((el as HTMLElement).dataset.id);
-        renderGraphExplorer(graph, id, entities, relationships);
+        renderGraphExplorer(graph, id, entities, relationships, allChunks);
         onSelect(id);
       });
     });

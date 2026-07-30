@@ -8,6 +8,7 @@ export interface ExtractedDocument {
   title: string;
   text: string;
   pageCount: number;
+  pages: string[];
 }
 
 export async function extractPdf(file: File): Promise<ExtractedDocument> {
@@ -15,10 +16,13 @@ export async function extractPdf(file: File): Promise<ExtractedDocument> {
   const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
 
   let text = "";
+  const pages: string[] = [];
+
   for (let i = 1; i <= pdf.numPages; i++) {
     const page = await pdf.getPage(i);
     const content = await page.getTextContent();
     const pageText = content.items.map((item: any) => item.str).join(" ");
+    pages.push(pageText);
     text += pageText + "\n";
   }
 
@@ -27,5 +31,6 @@ export async function extractPdf(file: File): Promise<ExtractedDocument> {
     title: file.name.replace(/\.pdf$/i, ""),
     text,
     pageCount: pdf.numPages,
+    pages,
   };
 }

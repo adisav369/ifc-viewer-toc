@@ -17,10 +17,14 @@ import { allWalls } from "./graph/queries";
 import { SearchService } from "./search/searchService";
 import { buildSearchIndex } from "./search/searchIndex";
 import { setupSearchPanel } from "./ui/searchPanel";
+import type { DocumentChunk } from "./documents/documentIndex";
+import { ingestDocumentChunks } from "./documents/documentService";
 
 
 const container = document.getElementById("container")!;
 const components = new OBC.Components();
+
+const allChunks: DocumentChunk[] = [];
 
 const world = createWorld(components, container);
 components.init();
@@ -48,7 +52,7 @@ async function init() {
       //console.log("DEBUG — relationships at call site:", relationships);
       for (const idSet of Object.values(modelIdMap) as Set<number>[]) {
        for (const id of idSet) {
-        renderGraphExplorer(graph, id, entities, relationships);
+        renderGraphExplorer(graph, id, entities, relationships, allChunks);
        }
       }
     });
@@ -81,7 +85,7 @@ async function init() {
       currentModelId = file.name;
       searchService.setIndex(buildSearchIndex(entities));
 
-      setupSearchPanel(searchService, graph, entities, relationships, (id: number) => {
+      setupSearchPanel(searchService, graph, entities, relationships, allChunks, (id: number) => {
        if (id > 0 && currentModelId) {
         const modelIdMap = { [currentModelId]: new Set([id]) };
         highlighter.highlightByID("select", modelIdMap, true, true);
@@ -116,6 +120,11 @@ async function init() {
         });
         console.log(`Created relationship ${rel.id}: "${docEntity.name}" ${rel.type} "${targetWall.name}"`);
        }
+       const chunks = ingestDocumentChunks(docEntity.id, doc.pages, entities, relationships);
+       allChunks.push(...chunks);
+       console.log(`Ingested ${chunks.length} chunks for "${docEntity.name}"`);
+
+       searchService.setIndex(buildSearchIndex(entities));
      };
       console.log("Canonical entities built:", entities.size);
       console.log("Sample entity:", [...entities.values()][10]);

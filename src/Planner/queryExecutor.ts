@@ -5,6 +5,8 @@ import { SearchService } from "../search/searchService";
 import type { RelationshipService } from "../relationships/relationshipService";
 import type { Entity } from "../semantic/entity";
 import type { QueryPlan } from "./queryPlanner";
+import type { DocumentChunk } from "../documents/documentIndex";
+import { chunksForDocument, searchChunks } from "../documents/documentQuery";
 
 export interface ExecutionResult {
   id: number;
@@ -18,7 +20,8 @@ export function executeQuery(
   graph: Graph,
   entities: Map<number, Entity>,
   relationships: RelationshipService,
-  searchService: SearchService
+  searchService: SearchService,
+  allChunks: DocumentChunk[]
 ): ExecutionResult[] {
   switch (plan.action) {
     case "listByNativeTypeKeyword": {
@@ -54,6 +57,22 @@ export function executeQuery(
         const source = entities.get(r.source);
         return { id: r.source, name: source?.name ?? "Unknown", type: r.type, detail: `→ ${match.entity.name}` };
       });
+    }
+
+    case "queryDocumentContent": {
+      const docMatch = searchService.search(plan.targetKeyword ?? "").find((r) => r.entity.entityType === "Document");
+      if (!docMatch) return [];
+
+      const docChunks = chunksForDocument(allChunks, docMatch.entity.id);
+      const matches = searchChunks(docChunks, plan.term ?? "");
+      const top = matches.length ? matches : docChunks.slice(0, 3).map((c) => ({ chunk: c, score: 0.5 }));
+
+      return top.slice(0, 3).map((m) => ({
+        id: m.chunk.id,
+        name: `${docMatch.entity.name} — Page ${m.chunk.page}`,
+        type: "DocumentChunk",
+        detail: m.chunk.text.length > 140 ? m.chunk.text.slice(0, 140) + "..." : m.chunk.text,
+      }));
     }
 
     case "search": {
