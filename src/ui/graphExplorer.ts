@@ -1,15 +1,14 @@
 import { Graph } from "../graph/graph";
 import { ancestorOfType, findChildren } from "../graph/queries";
 import type { Entity } from "../semantic/entity";
-import type { RelationshipStore } from "../semantic/relationships";
+import type { RelationshipService } from "../relationships/relationshipService";
 
 export function renderGraphExplorer(
   graph: Graph,
   elementId: number,
   entities: Map<number, Entity>,
-  relationships: RelationshipStore
+  relationships: RelationshipService
 ) {
-  //console.log("DEBUG — relationships param received:", relationships);
   const panel = document.getElementById("graph-explorer")!;
   const elementDiv = document.getElementById("ge-element")!;
   const relDiv = document.getElementById("ge-relationships")!;
@@ -33,11 +32,22 @@ export function renderGraphExplorer(
   const storey = ancestorOfType(graph, elementId, "IFCBUILDINGSTOREY");
   const children = findChildren(graph, elementId);
 
-  const incomingDocs = relationships
-    .incoming(elementId)
-    .filter((r) => r.type === "DESCRIBES")
-    .map((r) => entities.get(r.from)?.name)
-    .filter(Boolean);
+  const incoming = relationships.incoming(elementId);
+  const relationshipRows = incoming.map((r) => {
+    const sourceEntity = entities.get(r.source);
+    const metaEntries = Object.entries(r.metadata)
+      .map(([k, v]) => `${k}: ${v}`)
+      .join(" · ");
+
+    return `
+      <div class="row">
+        <span class="label">${r.type}</span><br>
+        └── ${sourceEntity?.name ?? "Unknown"}<br>
+        ${metaEntries ? `&nbsp;&nbsp;&nbsp;&nbsp;${metaEntries}<br>` : ""}
+        &nbsp;&nbsp;&nbsp;&nbsp;Confidence: ${r.confidence}<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;Created By: ${r.createdBy}
+      </div>`;
+  }).join("");
 
   relDiv.innerHTML = `
     <div class="row"><span class="label">Project:</span><br>└── ${project?.name ?? "—"}</div>
@@ -47,8 +57,7 @@ export function renderGraphExplorer(
     <div class="row"><span class="label">Children:</span><br>${
       children.length ? children.map((c) => `└── ${c?.name}`).join("<br>") : "└── (none)"
     }</div>
-    <div class="row"><span class="label">DESCRIBED_BY:</span><br>${
-      incomingDocs.length ? incomingDocs.map((d) => `└── ${d}`).join("<br>") : "└── (none)"
-    }</div>
+    <div class="row"><span class="label">Relationships:</span></div>
+    ${relationshipRows || '<div class="row">└── (none)</div>'}
   `;
 }

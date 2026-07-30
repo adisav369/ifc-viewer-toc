@@ -11,8 +11,10 @@ import { buildEntityMap } from "./semantic/entityMapper";
 import type { Entity } from "./semantic/entity";
 import { extractPdf } from "./connectors/documents/pdfConnector";
 import { mapDocumentToEntity } from "./connectors/documents/documentMapper";
-import { RelationshipStore } from "./semantic/relationships";
+import { RelationshipService } from "./relationships/relationshipService";
+import { RelationshipTypes } from "./relationships/relationshipTypes";
 import { allWalls } from "./graph/queries";
+
 
 const container = document.getElementById("container")!;
 const components = new OBC.Components();
@@ -22,7 +24,7 @@ components.init();
 
 let graph: Graph | null = null;
 let entities: Map<number, Entity> | null = null;
-const relationships = new RelationshipStore();
+const relationships = new RelationshipService();
 
 async function init() {
   await world.camera.controls.setLookAt(78, 20, -2.2, 26, -4, 25);
@@ -82,8 +84,12 @@ async function init() {
        const walls = allWalls(graph);
        const targetWall = walls[0];
        if (targetWall) {
-        relationships.add(docEntity.id, "DESCRIBES", targetWall.id);
-        console.log(`Hardcoded relationship: "${docEntity.name}" DESCRIBES "${targetWall.name}"`);
+        const rel = relationships.create(RelationshipTypes.DESCRIBES, docEntity.id, targetWall.id, {
+          metadata: { page: 14, section: "Fire Rating" },
+          confidence: 1.0,
+          createdBy: "manual",
+        });
+        console.log(`Created relationship ${rel.id}: "${docEntity.name}" ${rel.type} "${targetWall.name}"`);
        }
      };
       console.log("Canonical entities built:", entities.size);
