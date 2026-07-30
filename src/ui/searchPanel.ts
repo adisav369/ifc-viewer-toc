@@ -1,7 +1,10 @@
-import { SearchService } from "../search/searchService";
 import { Graph } from "../graph/graph";
 import type { Entity } from "../semantic/entity";
 import type { RelationshipService } from "../relationships/relationshipService";
+import { SearchService } from "../search/searchService";
+import { parseIntent } from "../planner/intentParser";
+import { planQuery } from "../planner/queryPlanner";
+import { executeQuery } from "../planner/queryExecutor";
 import { renderGraphExplorer } from "./graphExplorer";
 
 export function setupSearchPanel(
@@ -25,15 +28,19 @@ export function setupSearchPanel(
       return;
     }
 
-    const results = searchService.search(query);
+    const intent = parseIntent(query);
+    const plan = planQuery(intent);
+    console.log("Intent:", intent, "| Plan:", plan);
+
+    const results = executeQuery(plan, graph, entities, relationships, searchService);
 
     resultsDiv.innerHTML =
       results
         .map(
           (r) => `
-        <div class="search-result-item" data-id="${r.entity.id}">
-          <div class="search-result-name">${r.entity.name}</div>
-          <div class="search-result-meta">${r.entity.entityType} · ${r.entity.domain} · score ${r.score.toFixed(2)}</div>
+        <div class="search-result-item" data-id="${r.id}">
+          <div class="search-result-name">${r.name}</div>
+          <div class="search-result-meta">${r.type}${r.detail ? " · " + r.detail : ""}</div>
         </div>`
         )
         .join("") || `<div class="search-result-meta">No results</div>`;

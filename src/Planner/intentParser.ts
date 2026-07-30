@@ -1,0 +1,34 @@
+export type Intent =
+  | { type: "FindElements"; keyword?: string }
+  | { type: "FindOnStorey"; storey: string; keyword?: string }
+  | { type: "FindRelationshipsFor"; relationType: string; targetKeyword: string }
+  | { type: "Search"; term: string };
+
+const ELEMENT_KEYWORDS = ["wall", "door", "window", "beam", "column", "space", "room"];
+
+export function parseIntent(query: string): Intent {
+  const q = query.trim().toLowerCase();
+
+  const describesMatch = q.match(/(?:documents?|specifications?)\s+describ\w*\s+(?:this\s+)?(.+)/);
+  if (describesMatch) {
+    return { type: "FindRelationshipsFor", relationType: "DESCRIBES", targetKeyword: describesMatch[1].trim() };
+  }
+
+  const describedByMatch = q.match(/(.+?)\s+described by\s+(?:the\s+)?(.+)/);
+  if (describedByMatch) {
+    return { type: "FindRelationshipsFor", relationType: "DESCRIBES", targetKeyword: describedByMatch[1].trim() };
+  }
+
+  const storeyMatch = q.match(/(.*)\bon\s+(level\s*\d+|storey\s*\d+|ground floor)/);
+  if (storeyMatch) {
+    const keyword = ELEMENT_KEYWORDS.find((k) => storeyMatch[1].includes(k));
+    return { type: "FindOnStorey", storey: storeyMatch[2].trim(), keyword };
+  }
+
+  const keyword = ELEMENT_KEYWORDS.find((k) => q.includes(k));
+  if (keyword && (q.startsWith("show") || q.startsWith("find") || q.startsWith("list") || q === keyword || q === keyword + "s")) {
+    return { type: "FindElements", keyword };
+  }
+
+  return { type: "Search", term: query };
+}
