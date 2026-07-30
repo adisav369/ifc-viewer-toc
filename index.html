@@ -36,8 +36,8 @@
     }
     #graph-explorer {
       position: fixed;
-      top: 0; right: 0;
-      width: 280px; height: 100vh;
+      top: 130px; right: 0;
+      width: 280px; height: calc(100vh - 130px);
       background: rgba(20, 26, 33, 0.95);
       color: #e0e0e0;
       padding: 16px;
@@ -57,13 +57,55 @@
     }
     #graph-explorer .row { margin: 3px 0; }
     #graph-explorer .label { color: #888; }
+
+    #search-panel {
+  position: fixed;
+  top: 0; right: 0;
+  width: 280px;
+  background: rgba(20, 26, 33, 0.98);
+  padding: 12px 16px;
+  box-sizing: border-box;
+  z-index: 6;
+  display: none;
+  border-bottom: 1px solid #444;
+}
+#search-input {
+  width: 100%;
+  padding: 8px;
+  background: #1a1f27;
+  border: 1px solid #444;
+  color: #e0e0e0;
+  border-radius: 4px;
+  box-sizing: border-box;
+  font-size: 13px;
+}
+#search-results {
+  margin-top: 8px;
+  max-height: 240px;
+  overflow-y: auto;
+}
+.search-result-item {
+  padding: 6px 4px;
+  cursor: pointer;
+  border-bottom: 1px solid #2a2f38;
+  font-size: 12px;
+}
+.search-result-item:hover {
+  background: rgba(188, 241, 36, 0.1);
+}
+.search-result-name { color: #e0e0e0; font-weight: 600; }
+.search-result-meta { color: #888; font-size: 11px; }
   </style>
 
 </head>
 <body>
+  <div id="search-panel">
+    <input type="text" id="search-input" placeholder="Search entities..." />
+    <div id="search-results"></div>
+  </div>
   <button id="pdf-upload-btn" style="position: fixed; top: 16px; left: 16px; z-index: 6; display: none; padding: 8px 14px; background: #494cb6; color: white; border: none; border-radius: 6px; cursor: pointer;">
-  Upload Spec PDF
-</button>
+    Upload Spec PDF
+  </button>
 <input type="file" id="pdf-input" accept=".pdf" style="display: none;" />
   <div id="container"></div>
 

@@ -21,8 +21,9 @@ export function setupHighlighter(
   });
 
   highlighter.events.select.onHighlight.add(onSelect);
-
   highlighter.events.select.onClear.add(() => {
     console.log("Selection cleared");
   });
+
+  return highlighter;
 }

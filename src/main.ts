@@ -14,6 +14,9 @@ import { mapDocumentToEntity } from "./connectors/documents/documentMapper";
 import { RelationshipService } from "./relationships/relationshipService";
 import { RelationshipTypes } from "./relationships/relationshipTypes";
 import { allWalls } from "./graph/queries";
+import { SearchService } from "./search/searchService";
+import { buildSearchIndex } from "./search/searchIndex";
+import { setupSearchPanel } from "./ui/searchPanel";
 
 
 const container = document.getElementById("container")!;
@@ -21,6 +24,9 @@ const components = new OBC.Components();
 
 const world = createWorld(components, container);
 components.init();
+
+const searchService = new SearchService();
+let currentModelId: string | null = null;
 
 let graph: Graph | null = null;
 let entities: Map<number, Entity> | null = null;
@@ -37,6 +43,15 @@ async function init() {
   const status = document.getElementById("upload-status")!;
 
   uploadBtn.onclick = () => fileInput.click();
+    const highlighter = setupHighlighter(components, world, (modelIdMap: any) => {
+      if (!graph || !entities) return;
+      //console.log("DEBUG — relationships at call site:", relationships);
+      for (const idSet of Object.values(modelIdMap) as Set<number>[]) {
+       for (const id of idSet) {
+        renderGraphExplorer(graph, id, entities, relationships);
+       }
+      }
+    });
 
   fileInput.onchange = async () => {
     const file = fileInput.files?.[0];
@@ -63,6 +78,15 @@ async function init() {
       console.log("Graph built. Total nodes:", graph.nodes.size);
       runGraphDemo(graph);
       entities = buildEntityMap(graph.nodes);
+      currentModelId = file.name;
+      searchService.setIndex(buildSearchIndex(entities));
+
+      setupSearchPanel(searchService, graph, entities, relationships, (id: number) => {
+       if (id > 0 && currentModelId) {
+        const modelIdMap = { [currentModelId]: new Set([id]) };
+        highlighter.highlightByID("select", modelIdMap, true, true);
+       }
+      });
       const pdfBtn = document.getElementById("pdf-upload-btn") as HTMLButtonElement;
       const pdfInput = document.getElementById("pdf-input") as HTMLInputElement;
       pdfBtn.style.display = "block";
@@ -79,6 +103,7 @@ async function init() {
 
        const docEntity = mapDocumentToEntity(doc);
        entities.set(docEntity.id, docEntity);
+       searchService.setIndex(buildSearchIndex(entities));
        console.log("Canonical document entity:", docEntity);
 
        const walls = allWalls(graph);
@@ -96,15 +121,6 @@ async function init() {
       console.log("Sample entity:", [...entities.values()][10]);
     }
 
-    setupHighlighter(components, world, (modelIdMap: any) => {
-      if (!graph || !entities) return;
-      //console.log("DEBUG — relationships at call site:", relationships);
-      for (const idSet of Object.values(modelIdMap) as Set<number>[]) {
-       for (const id of idSet) {
-        renderGraphExplorer(graph, id, entities, relationships);
-       }
-      }
-    });
   };
 }
 
