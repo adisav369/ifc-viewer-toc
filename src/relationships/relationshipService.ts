@@ -1,4 +1,6 @@
 import type { Relationship, RelationshipMetadata } from "./relationship";
+import { EventBus } from "../core/eventBus";
+import type { GraphEvents } from "../core/graphEvents";
 
 let nextId = 1;
 
@@ -6,6 +8,8 @@ export class RelationshipService {
   private relationships: Relationship[] = [];
   private byFrom = new Map<number, Relationship[]>();
   private byTo = new Map<number, Relationship[]>();
+
+  readonly events = new EventBus<GraphEvents>();
 
   create(
     type: string,
@@ -33,6 +37,13 @@ export class RelationshipService {
     toList.push(rel);
     this.byTo.set(target, toList);
 
+    this.events.emit("relationships:changed", {
+      relationshipId: rel.id,
+      type: rel.type,
+      source: rel.source,
+      target: rel.target,
+    });
+
     return rel;
   }
 
@@ -46,5 +57,15 @@ export class RelationshipService {
 
   all(): Relationship[] {
     return this.relationships;
+  }
+
+  removeWhere(predicate: (r: Relationship) => boolean) {
+    this.relationships = this.relationships.filter((r) => !predicate(r));
+    for (const [key, list] of this.byFrom) {
+      this.byFrom.set(key, list.filter((r) => !predicate(r)));
+    }
+    for (const [key, list] of this.byTo) {
+      this.byTo.set(key, list.filter((r) => !predicate(r)));
+    }
   }
 }

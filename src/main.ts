@@ -20,9 +20,8 @@ import { setupSearchPanel } from "./ui/searchPanel";
 import type { DocumentChunk } from "./documents/documentIndex";
 import { ingestDocumentChunks } from "./documents/documentService";
 import { renderEvidencePanel } from "./ui/evidencePanel";
-import { runReasoningEngine } from "./reasoning/ruleEngine";
 import { IssueStore } from "./reasoning/issueStore";
-
+import { ReasoningService } from "./reasoning/reasoningService";
 
 const container = document.getElementById("container")!;
 const components = new OBC.Components();
@@ -41,8 +40,8 @@ let entities: Map<number, Entity> | null = null;
 let selectedEntityId: number | null = null;
 
 const relationships = new RelationshipService();
-
 const issueStore = new IssueStore();
+const reasoningService = new ReasoningService(relationships, issueStore, () => entities, () => graph);
 
 async function init() {
   await world.camera.controls.setLookAt(78, 20, -2.2, 26, -4, 25);
@@ -57,7 +56,6 @@ async function init() {
   uploadBtn.onclick = () => fileInput.click();
     const highlighter = setupHighlighter(components, world, (modelIdMap: any) => {
       if (!graph || !entities) return;
-      //console.log("DEBUG — relationships at call site:", relationships);
       for (const idSet of Object.values(modelIdMap) as Set<number>[]) {
        for (const id of idSet) {
         selectedEntityId = id;
@@ -133,17 +131,6 @@ async function init() {
        const chunks = ingestDocumentChunks(docEntity.id, doc.pages, entities, relationships);
        allChunks.push(...chunks);
        console.log(`Ingested ${chunks.length} chunks for "${docEntity.name}"`);
-
-       searchService.setIndex(buildSearchIndex(entities));
-       const report = runReasoningEngine({ graph: graph!, entities, relationships });
-       issueStore.clear();
-       issueStore.addMany(report.issues);
-       console.log("=== Reasoning Engine ===");
-       console.log(`Applicable checks: ${report.totalApplicable} | Passed: ${report.passed} | Failed: ${report.failed}`);
-       console.log(`Generated ${report.issues.length} compliance issue(s)`);
-       console.log(`Applicable checks: ${report.totalApplicable} | Passed: ${report.passed} | Failed: ${report.failed}`);
-       console.log(`Generated ${report.issues.length} compliance issue(s)`);
-       report.issues.slice(0, 10).forEach((i) => console.log(`  [${i.severity}] ${i.name} — ${i.reason}`));
 
        searchService.setIndex(buildSearchIndex(entities));
      };
