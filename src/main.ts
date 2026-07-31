@@ -20,6 +20,7 @@ import { setupSearchPanel } from "./ui/searchPanel";
 import type { DocumentChunk } from "./documents/documentIndex";
 import { ingestDocumentChunks } from "./documents/documentService";
 import { renderEvidencePanel } from "./ui/evidencePanel";
+import { runReasoningEngine } from "./reasoning/ruleEngine";
 
 
 const container = document.getElementById("container")!;
@@ -129,6 +130,13 @@ async function init() {
        const chunks = ingestDocumentChunks(docEntity.id, doc.pages, entities, relationships);
        allChunks.push(...chunks);
        console.log(`Ingested ${chunks.length} chunks for "${docEntity.name}"`);
+
+       searchService.setIndex(buildSearchIndex(entities));
+       const report = runReasoningEngine({ graph: graph!, entities, relationships });
+       console.log("=== Reasoning Engine ===");
+       console.log(`Applicable checks: ${report.totalApplicable} | Passed: ${report.passed} | Failed: ${report.failed}`);
+       console.log(`Generated ${report.issues.length} compliance issue(s)`);
+       report.issues.slice(0, 10).forEach((i) => console.log(`  [${i.severity}] ${i.name} — ${i.reason}`));
 
        searchService.setIndex(buildSearchIndex(entities));
      };

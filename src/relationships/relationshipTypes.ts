@@ -21,6 +21,10 @@ export const RelationshipTypes = {
   // Temporal (future)
   UPDATED_BY: "UPDATED_BY",
   SUPERSEDES: "SUPERSEDES",
+
+  AFFECTS: "AFFECTS",
+  SUPPORTED_BY: "SUPPORTED_BY",
+
 } as const;
 
 export const RelationshipCategory: Record<string, string> = {
@@ -37,4 +41,6 @@ export const RelationshipCategory: Record<string, string> = {
   MAINTAINED_BY: "Operational",
   UPDATED_BY: "Temporal",
   SUPERSEDES: "Temporal",
+  AFFECTS: "Reasoning",
+  SUPPORTED_BY: "Reasoning",
 };
