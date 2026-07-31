@@ -21,6 +21,7 @@ import type { DocumentChunk } from "./documents/documentIndex";
 import { ingestDocumentChunks } from "./documents/documentService";
 import { renderEvidencePanel } from "./ui/evidencePanel";
 import { runReasoningEngine } from "./reasoning/ruleEngine";
+import { IssueStore } from "./reasoning/issueStore";
 
 
 const container = document.getElementById("container")!;
@@ -41,6 +42,8 @@ let selectedEntityId: number | null = null;
 
 const relationships = new RelationshipService();
 
+const issueStore = new IssueStore();
+
 async function init() {
   await world.camera.controls.setLookAt(78, 20, -2.2, 26, -4, 25);
 
@@ -58,7 +61,7 @@ async function init() {
       for (const idSet of Object.values(modelIdMap) as Set<number>[]) {
        for (const id of idSet) {
         selectedEntityId = id;
-        renderGraphExplorer(graph, id, entities, relationships, allChunks);
+        renderGraphExplorer(graph, id, entities, relationships, allChunks, issueStore);
        }
       }
     });
@@ -133,7 +136,11 @@ async function init() {
 
        searchService.setIndex(buildSearchIndex(entities));
        const report = runReasoningEngine({ graph: graph!, entities, relationships });
+       issueStore.clear();
+       issueStore.addMany(report.issues);
        console.log("=== Reasoning Engine ===");
+       console.log(`Applicable checks: ${report.totalApplicable} | Passed: ${report.passed} | Failed: ${report.failed}`);
+       console.log(`Generated ${report.issues.length} compliance issue(s)`);
        console.log(`Applicable checks: ${report.totalApplicable} | Passed: ${report.passed} | Failed: ${report.failed}`);
        console.log(`Generated ${report.issues.length} compliance issue(s)`);
        report.issues.slice(0, 10).forEach((i) => console.log(`  [${i.severity}] ${i.name} — ${i.reason}`));

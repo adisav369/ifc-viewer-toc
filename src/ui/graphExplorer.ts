@@ -4,14 +4,19 @@ import type { Entity } from "../semantic/entity";
 import type { RelationshipService } from "../relationships/relationshipService";
 import type { DocumentChunk } from "../documents/documentIndex";
 import { chunksForDocument } from "../documents/documentQuery";
+import type { IssueStore } from "../reasoning/issueStore";
 
-export function renderGraphExplorer(
+
+
+ export function renderGraphExplorer(
   graph: Graph,
   elementId: number,
   entities: Map<number, Entity>,
   relationships: RelationshipService,
-  allChunks: DocumentChunk[] = []
-) {
+  allChunks: DocumentChunk[] = [],
+  issues?: IssueStore
+  ) {
+
   const panel = document.getElementById("graph-explorer")!;
   const elementDiv = document.getElementById("ge-element")!;
   const relDiv = document.getElementById("ge-relationships")!;
@@ -61,7 +66,23 @@ export function renderGraphExplorer(
       <div class="row"><span class="label">Relationships:</span></div>
       ${relationshipRows || '<div class="row">└── (none)</div>'}
     `;
-    return;
+    if (issues) {
+      const assetIssues = issues.forAsset(elementId);
+      if (assetIssues.length > 0) {
+        const issueRows = assetIssues.map((i) => `
+          <div class="row" style="color:#ff8f8f;">
+            └── <span style="text-transform:uppercase; font-size:11px;">${i.severity}</span> · ${i.reason}
+            <br>&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#888;">rule ${i.ruleId}</span>
+          </div>`).join("");
+        relDiv.innerHTML += `
+          <div class="row" style="margin-top:10px;"><span class="label" style="color:#ff8f8f;">⚠ Compliance Issues (${assetIssues.length}):</span></div>
+          ${issueRows}`;
+      } else {
+        relDiv.innerHTML += `
+          <div class="row" style="margin-top:10px;"><span class="label" style="color:#b8f229;">✓ Compliance:</span> no issues</div>`;
+      }
+    }
+    return;    
   }
 
   if (entity.entityType === "Document") {
