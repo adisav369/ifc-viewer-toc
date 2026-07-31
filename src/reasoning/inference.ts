@@ -9,6 +9,7 @@ export interface ComplianceIssue extends Entity {
   reason: string;
   ruleId: string;
   affectsId: number;
+  evidence: EvidenceRef[];
 }
 
 export function createComplianceIssue(

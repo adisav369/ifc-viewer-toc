@@ -41,7 +41,7 @@ let selectedEntityId: number | null = null;
 
 const relationships = new RelationshipService();
 const issueStore = new IssueStore();
-const reasoningService = new ReasoningService(relationships, issueStore, () => entities, () => graph);
+const reasoningService = new ReasoningService(relationships, issueStore, () => entities, () => graph, allChunks);
 
 async function init() {
   await world.camera.controls.setLookAt(78, 20, -2.2, 26, -4, 25);
@@ -118,6 +118,10 @@ async function init() {
        searchService.setIndex(buildSearchIndex(entities));
        console.log("Canonical document entity:", docEntity);
 
+       const chunks = ingestDocumentChunks(docEntity.id, doc.pages, entities, relationships);
+       allChunks.push(...chunks);
+       console.log(`Ingested ${chunks.length} chunks for "${docEntity.name}"`);
+
        const walls = allWalls(graph);
        const targetWall = walls[0];
        if (targetWall) {
@@ -128,9 +132,6 @@ async function init() {
         });
         console.log(`Created relationship ${rel.id}: "${docEntity.name}" ${rel.type} "${targetWall.name}"`);
        }
-       const chunks = ingestDocumentChunks(docEntity.id, doc.pages, entities, relationships);
-       allChunks.push(...chunks);
-       console.log(`Ingested ${chunks.length} chunks for "${docEntity.name}"`);
 
        searchService.setIndex(buildSearchIndex(entities));
      };

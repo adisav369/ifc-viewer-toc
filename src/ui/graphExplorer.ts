@@ -69,11 +69,21 @@ import type { IssueStore } from "../reasoning/issueStore";
     if (issues) {
       const assetIssues = issues.forAsset(elementId);
       if (assetIssues.length > 0) {
-        const issueRows = assetIssues.map((i) => `
-          <div class="row" style="color:#ff8f8f;">
-            └── <span style="text-transform:uppercase; font-size:11px;">${i.severity}</span> · ${i.reason}
-            <br>&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#888;">rule ${i.ruleId}</span>
-          </div>`).join("");
+       const issueRows = assetIssues.map((i) => {
+         const evidenceRows = (i.evidence ?? []).map((e) => {
+           const evidenceEntity = entities.get(e.entityId);
+           return `<div class="row" style="color:#c9a0a0; padding-left:16px; font-size:11px;">
+             └── ${evidenceEntity?.name ?? "Unknown"} — ${e.note}
+           </div>`;
+          }).join("");
+
+          return `
+            <div class="row" style="color:#ff8f8f;">
+              └── <span style="text-transform:uppercase; font-size:11px;">${i.severity}</span> · ${i.reason}
+              <br>&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#888;">rule ${i.ruleId}</span>
+            </div>
+            ${evidenceRows}`;
+        }).join("");
         relDiv.innerHTML += `
           <div class="row" style="margin-top:10px;"><span class="label" style="color:#ff8f8f;">⚠ Compliance Issues (${assetIssues.length}):</span></div>
           ${issueRows}`;
