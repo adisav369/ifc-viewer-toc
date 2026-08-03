@@ -23,6 +23,7 @@ import { renderEvidencePanel } from "./ui/evidencePanel";
 import { IssueStore } from "./reasoning/issueStore";
 import { ReasoningService } from "./reasoning/reasoningService";
 import { CheckResultStore } from "./reasoning/checkResultStore";
+import { resolveDescribes } from "./connectors/documents/relationshipResolver";
 
 const container = document.getElementById("container")!;
 const components = new OBC.Components();
@@ -92,6 +93,11 @@ async function init() {
       console.log("Graph built. Total nodes:", graph.nodes.size);
       runGraphDemo(graph);
       entities = buildEntityMap(graph.nodes);
+      const uniqueWallTypes = [...entities.values()]
+        .filter((e) => e.entityType === "PhysicalAsset")
+        .map((e) => e.name.split(":").slice(0, 2).join(":"))
+        .filter((v, i, a) => a.indexOf(v) === i);
+      console.log("UNIQUE WALL TYPES:", uniqueWallTypes);       
       currentModelId = file.name;
       searchService.setIndex(buildSearchIndex(entities));
 
@@ -115,7 +121,7 @@ async function init() {
        console.log("Extracting PDF...");
        const doc = await extractPdf(file);
        console.log("Extracted document:", { title: doc.title, pageCount: doc.pageCount, textPreview: doc.text.slice(0, 200) });
-
+       console.log("FULL TEXT:", doc.text);
        const docEntity = mapDocumentToEntity(doc);
        entities.set(docEntity.id, docEntity);
        searchService.setIndex(buildSearchIndex(entities));
@@ -126,15 +132,16 @@ async function init() {
        console.log(`Ingested ${chunks.length} chunks for "${docEntity.name}"`);
 
        const walls = allWalls(graph);
-       const targetWall = walls[0];
-       if (targetWall) {
-        const rel = relationships.create(RelationshipTypes.DESCRIBES, docEntity.id, targetWall.id, {
-          metadata: { page: 14, section: "Fire Rating" },
-          confidence: 1.0,
-          createdBy: "manual",
+       const matches = resolveDescribes(chunks, walls);
+       for (const match of matches) {
+         const rel = relationships.create(RelationshipTypes.DESCRIBES, docEntity.id, match.asset.id, {
+         metadata: { matchedCode: match.typeCode, matchScore: match.score, method: "keyword-type" },
+         confidence: Math.min(1.0, match.score / 3),
+         createdBy: "resolver",
         });
-        console.log(`Created relationship ${rel.id}: "${docEntity.name}" ${rel.type} "${targetWall.name}"`);
+        console.log(`Resolved: "${docEntity.name}" DESCRIBES "${match.asset.name}" (code "${match.typeCode}", score ${match.score})`);
        }
+       if (matches.length === 0) console.log("No matching assets found for this document.");
 
        searchService.setIndex(buildSearchIndex(entities));
      };
