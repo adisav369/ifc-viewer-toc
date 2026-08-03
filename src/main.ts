@@ -22,6 +22,7 @@ import { ingestDocumentChunks } from "./documents/documentService";
 import { renderEvidencePanel } from "./ui/evidencePanel";
 import { IssueStore } from "./reasoning/issueStore";
 import { ReasoningService } from "./reasoning/reasoningService";
+import { CheckResultStore } from "./reasoning/checkResultStore";
 
 const container = document.getElementById("container")!;
 const components = new OBC.Components();
@@ -40,8 +41,10 @@ let entities: Map<number, Entity> | null = null;
 let selectedEntityId: number | null = null;
 
 const relationships = new RelationshipService();
+
 const issueStore = new IssueStore();
-const reasoningService = new ReasoningService(relationships, issueStore, () => entities, () => graph, allChunks);
+const checkResultStore = new CheckResultStore();
+const reasoningService = new ReasoningService(relationships, issueStore, checkResultStore, () => entities, () => graph, allChunks)
 
 async function init() {
   await world.camera.controls.setLookAt(78, 20, -2.2, 26, -4, 25);
@@ -59,7 +62,7 @@ async function init() {
       for (const idSet of Object.values(modelIdMap) as Set<number>[]) {
        for (const id of idSet) {
         selectedEntityId = id;
-        renderGraphExplorer(graph, id, entities, relationships, allChunks, issueStore);
+        renderGraphExplorer(graph, id, entities, relationships, allChunks, issueStore, checkResultStore);
        }
       }
     });

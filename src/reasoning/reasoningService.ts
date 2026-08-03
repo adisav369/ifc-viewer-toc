@@ -4,6 +4,7 @@ import type { RelationshipService } from "../relationships/relationshipService";
 import type { DocumentChunk } from "../documents/documentIndex";
 import { runReasoningEngine, type EngineReport } from "./ruleEngine";
 import { IssueStore } from "./issueStore";
+import { CheckResultStore } from "./checkResultStore";
 
 export class ReasoningService {
   private isRunning = false;
@@ -11,6 +12,7 @@ export class ReasoningService {
   constructor(
     private relationships: RelationshipService,
     private issueStore: IssueStore,
+    private checkResultStore: CheckResultStore,
     private getEntities: () => Map<number, Entity> | null,
     private getGraph: () => Graph | null,
     private chunks: DocumentChunk[]
@@ -34,6 +36,8 @@ export class ReasoningService {
       const report = runReasoningEngine({ graph, entities, relationships: this.relationships, chunks: this.chunks });
       this.issueStore.clear();
       this.issueStore.addMany(report.issues);
+      this.checkResultStore.clear();
+      this.checkResultStore.addMany(report.allResults);
 
       console.log("[ReasoningService] auto-ran on relationship change");
       console.log(`Applicable checks: ${report.totalApplicable} | Passed: ${report.passed} | Failed: ${report.failed}`);

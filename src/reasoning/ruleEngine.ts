@@ -1,4 +1,4 @@
-import type { GraphContext } from "./rule";
+import type { GraphContext, CheckResult } from "./rule";
 import { ALL_RULES } from "./compliance";
 import { createComplianceIssue, type ComplianceIssue } from "./inference";
 
@@ -8,6 +8,7 @@ export interface EngineReport {
   passed: number;
   failed: number;
   issues: ComplianceIssue[];
+  allResults: CheckResult[];
 }
 
 export function runReasoningEngine(ctx: GraphContext): EngineReport {
@@ -17,10 +18,9 @@ export function runReasoningEngine(ctx: GraphContext): EngineReport {
     passed: 0,
     failed: 0,
     issues: [],
+    allResults: [],
   };
 
-  // Snapshot entity list first — we mutate ctx.entities as issues are created,
-  // and must not evaluate rules against the issues we generate.
   const snapshot = [...ctx.entities.values()];
 
   for (const entity of snapshot) {
@@ -30,6 +30,15 @@ export function runReasoningEngine(ctx: GraphContext): EngineReport {
 
       report.totalApplicable++;
       const result = rule.evaluate(entity, ctx);
+
+      report.allResults.push({
+        entityId: entity.id,
+        ruleId: rule.id,
+        ruleName: rule.name,
+        severity: rule.severity,
+        passed: result.passed,
+        reason: result.reason,
+      });
 
       if (result.passed) {
         report.passed++;

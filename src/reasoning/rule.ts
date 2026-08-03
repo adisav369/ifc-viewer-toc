@@ -28,3 +28,11 @@ export interface Rule {
   applies(entity: Entity, ctx: GraphContext): boolean;
   evaluate(entity: Entity, ctx: GraphContext): RuleResult;
 }
+export interface CheckResult {
+  entityId: number;
+  ruleId: string;
+  ruleName: string;
+  severity: "info" | "warning" | "critical";
+  passed: boolean;
+  reason: string;
+}

@@ -5,16 +5,16 @@ import type { RelationshipService } from "../relationships/relationshipService";
 import type { DocumentChunk } from "../documents/documentIndex";
 import { chunksForDocument } from "../documents/documentQuery";
 import type { IssueStore } from "../reasoning/issueStore";
+import type { CheckResultStore } from "../reasoning/checkResultStore";
 
-
-
- export function renderGraphExplorer(
+export function renderGraphExplorer(
   graph: Graph,
   elementId: number,
   entities: Map<number, Entity>,
   relationships: RelationshipService,
   allChunks: DocumentChunk[] = [],
-  issues?: IssueStore
+  issues?: IssueStore,
+  checks?: CheckResultStore
   ) {
 
   const panel = document.getElementById("graph-explorer")!;
@@ -66,6 +66,7 @@ import type { IssueStore } from "../reasoning/issueStore";
       <div class="row"><span class="label">Relationships:</span></div>
       ${relationshipRows || '<div class="row">└── (none)</div>'}
     `;
+
     if (issues) {
       const assetIssues = issues.forAsset(elementId);
       if (assetIssues.length > 0) {
@@ -92,7 +93,21 @@ import type { IssueStore } from "../reasoning/issueStore";
           <div class="row" style="margin-top:10px;"><span class="label" style="color:#b8f229;">✓ Compliance:</span> no issues</div>`;
       }
     }
-    return;    
+
+    if (checks) {
+      const allChecks = checks.forAsset(elementId);
+      const passedChecks = allChecks.filter((c) => c.passed);
+      if (passedChecks.length > 0) {
+        const passedRows = passedChecks.map((c) => `
+          <div class="row" style="color:#b8f229;">
+            └── <span style="font-size:11px;">${c.ruleId}</span> · ${c.reason}
+          </div>`).join("");
+        relDiv.innerHTML += `
+          <div class="row" style="margin-top:10px;"><span class="label" style="color:#b8f229;">✓ Passed Checks (${passedChecks.length}):</span></div>
+          ${passedRows}`;
+      }
+    }
+    return;
   }
 
   if (entity.entityType === "Document") {
