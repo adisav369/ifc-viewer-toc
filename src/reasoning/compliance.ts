@@ -1,7 +1,7 @@
 import type { Rule, GraphContext, RuleResult } from "./rule";
 import type { Entity } from "../semantic/entity";
-import { RelationshipTypes } from "../relationships/relationshipTypes";
 import { chunksForDocument, searchChunks } from "../documents/documentQuery";
+import { findDescribingDocuments } from "./queries";
 
 export const AssetMustBeDocumented: Rule = {
   id: "DOC-001",
@@ -13,9 +13,7 @@ export const AssetMustBeDocumented: Rule = {
   },
 
   evaluate(entity: Entity, ctx: GraphContext): RuleResult {
-    const describingDocs = ctx.relationships
-      .incoming(entity.id)
-      .filter((r) => r.type === RelationshipTypes.DESCRIBES);
+    const describingDocs = findDescribingDocuments(entity.id, ctx);
 
     if (describingDocs.length > 0) {
       const docNames = describingDocs
@@ -46,12 +44,11 @@ export const FireRatedAssetMustBeSpecified: Rule = {
 
   applies(entity: Entity, ctx: GraphContext): boolean {
     if (entity.entityType !== "PhysicalAsset") return false;
-    const describingDocs = ctx.relationships.incoming(entity.id).filter((r) => r.type === RelationshipTypes.DESCRIBES);
-    return describingDocs.length > 0;
+    return findDescribingDocuments(entity.id, ctx).length > 0;
   },
 
   evaluate(entity: Entity, ctx: GraphContext): RuleResult {
-    const describingDocs = ctx.relationships.incoming(entity.id).filter((r) => r.type === RelationshipTypes.DESCRIBES);
+    const describingDocs = findDescribingDocuments(entity.id, ctx);
 
     for (const rel of describingDocs) {
       const docId = rel.source;

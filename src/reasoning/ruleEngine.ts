@@ -1,6 +1,9 @@
 import type { GraphContext, CheckResult } from "./rule";
-import { ALL_RULES } from "./compliance";
+import { ALL_RULES as COMPLIANCE_RULES } from "./compliance";
+import { RISK_RULES } from "./risk";
 import { createComplianceIssue, type ComplianceIssue } from "./inference";
+
+const ALL_RULES = [...COMPLIANCE_RULES, ...RISK_RULES];
 
 export interface EngineReport {
   totalEvaluated: number;
